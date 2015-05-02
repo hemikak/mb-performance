@@ -32,6 +32,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CountDownLatch;
 import java.util.regex.Pattern;
 
 /**
@@ -51,8 +52,12 @@ public class MBJMeterTestManager extends JMeterTestManager {
 
     private File jmeterProps = null;
 
+    public boolean isRunning = false;
+
     public void runTest(JMeterTest jMeterTest)
             throws Exception {
+
+        isRunning = true;
         JMeterResult results;
 
         // Init JMeter
@@ -96,12 +101,12 @@ public class MBJMeterTestManager extends JMeterTestManager {
             log.error(ex);
             resultState = false;
         }
-        try {
-            results = resultValidator(resultFile);
-        } catch (FileNotFoundException e) {
-            log.error(e);
-            resultState = false;
-        }
+//        try {
+//            results = resultValidator(resultFile);
+//        } catch (FileNotFoundException e) {
+//            log.error(e);
+//            resultState = false;
+//        }
         results.setFileName(resultFile);
         results.setExecutionState(resultState);
 
@@ -177,12 +182,12 @@ public class MBJMeterTestManager extends JMeterTestManager {
             try {
                 logParamsAndProps(args);
 
-                jmeterInstance.start(args.toArray(new String[]{}));
+                jmeterInstance.start(args.toArray(new String[args.size()]));
 
                 BufferedReader in = new BufferedReader(new FileReader(jmeterLogFile));
                 while (!checkForEndOfTest(in)) {
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(10000);
                     } catch (InterruptedException e) {
                         break;
                     }
@@ -316,12 +321,13 @@ public class MBJMeterTestManager extends JMeterTestManager {
         return result;
     }
 
-    private boolean checkForEndOfTest(BufferedReader in) throws IOException {
+    public boolean checkForEndOfTest(BufferedReader in) throws IOException {
         boolean testEnded = false;
         try {
             String line;
             while ((line = in.readLine()) != null) {
                 if (line.contains("Test has ended")) {
+                    log.info("End of test reached.");
                     testEnded = true;
                     break;
                 }

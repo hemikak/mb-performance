@@ -1,79 +1,41 @@
-import Utilities.MBJMXPropertyEditor;
-import Utilities.MBJMeterTestManager;
-import org.apache.jmeter.engine.StandardJMeterEngine;
-import org.apache.jmeter.save.SaveService;
-import org.apache.jmeter.util.JMeterUtils;
-import org.apache.jorphan.collections.HashTree;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import Utilities.Utils;
+import org.apache.commons.configuration.ConfigurationException;
 import org.testng.annotations.Test;
-import org.wso2.automation.tools.jmeter.JMeterTest;
-import org.wso2.automation.tools.jmeter.JMeterTestManager;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.net.URISyntaxException;
+import java.io.IOException;
 
 /**
  *
  */
-public class OneKBMessagesTestCase {
-    private static final Logger log = LoggerFactory.getLogger(OneKBMessagesTestCase.class);
+public class OneKBMessagesTestCase extends JMXSetup {
+
+    public OneKBMessagesTestCase() throws ConfigurationException, IOException {
+        super.init();
+        Utils.editPublisherInputFilePath(super.publisher, getClass().getResource("/sampleMessages/sample_1KB_msg" +
+                                                                                 ".xml").getPath());
+        Utils.editPublisherDestinationName(super.publisher, "QueueOneKB");
+        Utils.editSubscriberDestinationName(super.subscriber, "QueueOneKB");
+    }
+
     @Test()
-    public void listServices() throws Exception {
+    public void oneSubscriberTestCase() throws Exception {
 
-//        // JMeter Engine
-//        StandardJMeterEngine jmeter = new StandardJMeterEngine();
-//
-//        log.info(OneKBMessagesTestCase.class.getClassLoader().getResource("jmeter.properties").getPath());
-//
-//        // Initialize Properties, logging, locale, etc.
-//        JMeterUtils.loadJMeterProperties("/Users/hemikakodikara/mb/workspace/mb-performance/src/test/resources/jmeter" +
-//                                         ".properties");
-//        JMeterUtils.setJMeterHome("/Users/hemikakodikara/mb/clients/mb-jmeter");
-//        JMeterUtils.initLogging();// you can comment this line out to see extra log messages of i.e. DEBUG level
-//        JMeterUtils.initLocale();
-//
-//        // Initialize JMeter SaveService
-//        SaveService.loadProperties();
-//
-//        // Load existing .jmx Test Plan
-//        FileInputStream in = new FileInputStream("/Users/hemikakodikara/mb/workspace/mb-performance/src/test/resources/one-kb-test1/JMSPublisher.jmx");
-//        log.info("FIS : " +  Boolean.toString(in == null));
-//        HashTree testPlanTree = SaveService.loadTree(in);
-//        in.close();
-//
-//        System.out.println(testPlanTree);
-//
-//        // Run JMeter Test
-//        jmeter.configure(testPlanTree);
-//        jmeter.run();
+        Utils.editThreadCount(super.publisher, "1");
+        Utils.editThreadCount(super.subscriber, "1");
+        Utils.editRampUpTime(super.publisher, "1");
+        Utils.editRampUpTime(super.subscriber, "1");
 
+        super.runTest();
+    }
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    JMeterTest subscriberScript = new JMeterTest(new File(getClass().getResource
-                            ("/one-kb-test1/JMSSubscriber" +
-                             ".jmx").toURI()));
-                    MBJMeterTestManager subscriberManager = new MBJMeterTestManager();
-                    subscriberManager.runTest(subscriberScript);
-                } catch (URISyntaxException e) {
-                    e.printStackTrace();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+    @Test()
+    public void twoSubscriberTestCase() throws Exception {
 
-        Thread.sleep(5000);
+        Utils.editThreadCount(super.publisher, "2");
+        Utils.editThreadCount(super.subscriber, "2");
+        Utils.editRampUpTime(super.publisher, "2");
+        Utils.editRampUpTime(super.subscriber, "2");
 
-        MBJMXPropertyEditor.editPublisherMessageCount(getClass().getResource("/one-kb-test1/JMSPublisher.jmx").getPath(), "100000");
-
-        JMeterTest publisherScript = new JMeterTest(new File(getClass().getResource("/one-kb-test1/JMSPublisher.jmx")
-                .toURI()));
-        MBJMeterTestManager publisherManager = new MBJMeterTestManager();
-        publisherManager.runTest(publisherScript);
+        super.runTest();
     }
 }
