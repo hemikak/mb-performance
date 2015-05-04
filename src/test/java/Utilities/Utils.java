@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -22,11 +23,6 @@ public class Utils {
         StringWriter stringWriter = new StringWriter();
         config.save(stringWriter);
         System.out.println(stringWriter.toString());
-    }
-
-    public static void editPublisherMessageCount(XMLConfiguration config, String value) throws ConfigurationException {
-        String messageCountPath = "/hashTree/hashTree/ThreadGroup/elementProp/stringProp[@name='LoopController.loops']";
-        editProperty(config, messageCountPath, value);
     }
 
     public static void editThreadCount(XMLConfiguration config, String value) throws ConfigurationException {
@@ -68,5 +64,25 @@ public class Utils {
         String currentValue = config.getString(propertyName);
         config.setProperty(propertyName, value);
         log.info("Updated " + propertyName + "'. Old : " + currentValue + " New : " + value);
+    }
+
+    public static void waitAndStopIfNoChangeInFile(MBJMeterTestManager manager) {
+        double oldSize = -1;
+        double currentSize = 0;
+
+        while (currentSize != oldSize) {
+            try {
+                // Waits till the consumer client received more messages.
+                TimeUnit.MILLISECONDS.sleep(3000);
+                log.info("Waiting...");
+            } catch (InterruptedException e) {
+                log.error("Error waiting for receiving messages.", e);
+            }
+            // Updating message counters
+            oldSize = currentSize;
+            currentSize = manager.getReportFileName().length();//client.getReceivedMessageCount();
+        }
+
+        log.info("Closing JMeter instance.");
     }
 }

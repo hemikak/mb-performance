@@ -26,16 +26,17 @@ public class OneKBMessagesTestCase extends JMXSetup {
         Utils.editRampUpTime(super.subscriber, "1");
 
         super.runTest();
+
     }
 
-    @Test()
-    public void twoSubscriberTestCase() throws Exception {
-
-        Utils.editThreadCount(super.publisher, "2");
-        Utils.editThreadCount(super.subscriber, "2");
-        Utils.editRampUpTime(super.publisher, "2");
-        Utils.editRampUpTime(super.subscriber, "2");
-
-        super.runTest();
-    }
+//    @Test()
+//    public void twoSubscriberTestCase() throws Exception {
+//
+//        Utils.editThreadCount(super.publisher, "2");
+//        Utils.editThreadCount(super.subscriber, "2");
+//        Utils.editRampUpTime(super.publisher, "2");
+//        Utils.editRampUpTime(super.subscriber, "2");
+//
+//        super.runTest();
+//    }
 }

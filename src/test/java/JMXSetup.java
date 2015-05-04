@@ -61,29 +61,63 @@ public class JMXSetup {
         subscriber.save();
 
         final String subscriberPath = this.subscriberPath;
-        final MBJMeterTestManager subscriberManager = new MBJMeterTestManager();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    JMeterTest subscriberScript = new JMeterTest(new File(subscriberPath));
-                    subscriberManager.runTest(subscriberScript);
-                    subscriberManager.isRunning = false;
-                    //Thread.sleep(4000);
-                } catch (Exception e) {
-                    log.error("Error running test.", e);
-                }
-            }
-        }).start();
+        //        new Thread(new Runnable() {
+        //            @Override
+        //            public void run() {
+        //                try {
+        log.info("Subscriber started.");
+        MBJMeterTestManager subscriberManager = new MBJMeterTestManager();
+        JMeterTest subscriberScript = new JMeterTest(new File(subscriberPath));
+        subscriberManager.runTest(subscriberScript);
+
+        //                } catch (Exception e) {
+        //                    log.error("Error running test.", e);
+        //                }
+        //            }
+        //        }).start();
 
 
+        log.info("Publisher started.");
         JMeterTest publisherScript = new JMeterTest(new File(publisherPath));
         MBJMeterTestManager publisherManager = new MBJMeterTestManager();
         publisherManager.runTest(publisherScript);
+        log.info("Publisher finished.");
 
-        while (subscriberManager.isRunning) {
-            log.info(Boolean.toString(subscriberManager.isRunning));
-            Thread.sleep(5000);
-        }
+        Utils.waitAndStopIfNoChangeInFile(publisherManager);
+        Utils.waitAndStopIfNoChangeInFile(publisherManager);
+
+//        while (!publisherManager.checkForEndOfTest()) {
+//            try {
+//                Thread.sleep(1000);
+//                log.info("Waiting for Publisher to Finish.");
+//            } catch (InterruptedException e) {
+//                break;
+//            }
+//        }
+//
+//
+//        // Check it file changes and quit
+//        while (!subscriberManager.checkForEndOfTest()) {
+//            try {
+//                Thread.sleep(1000);
+//                log.info("Waiting for Subscriber to Finish.");
+//            } catch (InterruptedException e) {
+//                break;
+//            }
+//        }
+
+        MBJMeterTestManager.stopAllTests();
+        log.info("Subscriber finished.");
+
+        //        log.info("Waiting started.");
+        //        while (subscriberManager.isRunning) {
+        //            log.info(Boolean.toString(subscriberManager.isRunning));
+        //            Thread.sleep(5000);
+        //        }
+        //        log.info("Waiting ended.");
+    }
+
+    public void stopAllTests() throws IOException {
+        MBJMeterTestManager.stopAllTests();
     }
 }
