@@ -15,62 +15,55 @@
  */
 
 
-package Utilities;
+package utilities;
 
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import exceptions.MBPerformanceException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.jmeter.JMeter;
-import org.apache.jmeter.util.ShutdownClient;
 import org.wso2.automation.tools.jmeter.JMeterInstallationProvider;
-import org.wso2.automation.tools.jmeter.JMeterResult;
 import org.wso2.automation.tools.jmeter.JMeterTest;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import java.io.BufferedReader;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.regex.Pattern;
 
 public class MBJMeterTestManager {
 
-    private static final Pattern PAT_ERROR = Pattern.compile(".*\\s+ERROR\\s+.*");
     private static final Log log = LogFactory.getLog(MBJMeterTestManager.class);
 
     private String jmeterLogLevel = "INFO";
 
     private File testFile = null;
     private File jmeterHome = null;
-    private File jmeterLogFile = null;
 
     private DateFormat fmt = new SimpleDateFormat("yyMMdd-HH-mm-ss");
 
     private File jmeterProps = null;
 
-    private String reportFileName;
+    private String reportFileFullPath;
 
     public void runTest(JMeterTest jMeterTest)
-            throws Exception {
-        JMeterResult results;
+            throws IOException, MBPerformanceException {
 
         // Init JMeter
         jmeterHome = JMeterInstallationProvider.getInstance().getJMeterHome();
@@ -84,27 +77,12 @@ public class MBJMeterTestManager {
         }
 
         String resultFile = executeMe();
-        //        checkForErrors();
         log.info("for more info. " + resultFile);
-//        if (results.getErrorCount() > 0) {
-//            throw new Exception("Test Failed. " + results.getErrorCount() + " Error/s Found.\n"
-//                                + results.getErrorList().toString() + "\nRefer "
-//                                + results.getFileName() + " for test result");
-//        }
-//
-//        if (results.getFailureCount() > 0) {
-//            throw new AssertionError("Test Failed. " + results.getFailureCount() + " Assertion Failure/s.\n"
-//                                     + results.getAssertList().toString() + "\nRefer "
-//                                     + results.getFileName() + " for test result");
-//        }
-
     }
 
-    private String executeMe() throws Exception {
+    private String executeMe() throws MBPerformanceException, IOException {
         addLogFile(testFile.getName());
-        JMeterResult results = new JMeterResult();
-        String resultFile = executeTest(testFile);
-        return resultFile;
+        return executeTest(testFile);
     }
 
     private void setJMeterPropertyFile(JMeterTest jMeterTest) throws IOException {
@@ -121,8 +99,8 @@ public class MBJMeterTestManager {
         }
     }
 
-    private String executeTest(File test) throws Exception {
-        String reportFileFullPath;
+    private String executeTest(File test) throws MBPerformanceException {
+        String reportFileName;
         JMeter jmeterInstance = new JMeter();
         try {
             log.info("Executing test: " + test.getCanonicalPath());
@@ -164,7 +142,7 @@ public class MBJMeterTestManager {
 
             } catch (ExitException e) {
                 if (e.getCode() != 0) {
-                    throw new Exception("Test failed", e);
+                    throw new MBPerformanceException("Test failed", e);
                 }
             } catch (Exception e) {
                 log.error(e);
@@ -174,7 +152,7 @@ public class MBJMeterTestManager {
                 Thread.setDefaultUncaughtExceptionHandler(oldHandler);
             }
         } catch (IOException e) {
-            throw new Exception("Can't execute test", e);
+            throw new MBPerformanceException("Can't execute test", e);
         }
         return reportFileFullPath;
     }
@@ -195,68 +173,27 @@ public class MBJMeterTestManager {
         }
     }
 
-    private void xmlValidator(String fileName) throws Exception {
-        FileInputStream inputStream = null;
-        XMLStreamReader parser = null;
-        StAXOMBuilder builder = null;
-        File file = new File(fileName);
+    public void xmlValidator() throws ParserConfigurationException, IOException, SAXException {
+        File file = new File(reportFileFullPath);
 
         if (file.exists()) {
             try {
-                inputStream = new FileInputStream(file);
-                parser = XMLInputFactory.newInstance().createXMLStreamReader(inputStream);
+                DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new
+                        FileReader(file)));
+            } catch (SAXException e) {
+                log.warn("Error in JTL report file. Attempting to fix.");
+                PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(reportFileFullPath, true)));
+                out.println("</testResults>");
+                out.close();
 
-                builder = new StAXOMBuilder(parser);
-                builder.getDocumentElement();
-
-            } finally {
-                if (builder != null) {
-                    builder.close();
-                }
-                if (parser != null) {
-                    try {
-                        parser.close();
-                    } catch (XMLStreamException e) {
-                        //ignore
-                    }
-                }
-                if (inputStream != null) {
-                    try {
-                        inputStream.close();
-                    } catch (IOException e) {
-                        ///ignore
-                    }
-                }
+                DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new
+                        FileReader(file)));
+                log.info("Fixed error in JTL report file.");
             }
-
         } else {
             throw new FileNotFoundException("Result File is not Created");
         }
     }
-
-    public boolean checkForEndOfTest() throws IOException {
-        boolean testEnded = false;
-        BufferedReader in = null;
-        try {
-            in = new BufferedReader(new FileReader(jmeterLogFile));
-            String line;
-            while ((line = in.readLine()) != null) {
-                if (line.contains("Test has ended")) {
-                    testEnded = true;
-                    break;
-                }
-            }
-
-        } catch (IOException e) {
-            throw new IOException("Can't read log file", e);
-        }finally {
-            if (in != null) {
-                in.close();
-            }
-        }
-        return testEnded;
-    }
-
 
     private static class ExitException extends SecurityException {
 
@@ -275,8 +212,8 @@ public class MBJMeterTestManager {
 
     private void addLogFile(String fileName) throws IOException {
 
-        jmeterLogFile = new File(JMeterInstallationProvider.getInstance().getLogDir().getCanonicalPath()
-                                 + File.separator + fileName.substring(0, fileName.lastIndexOf(".")) + "-" + fmt
+        File jmeterLogFile = new File(JMeterInstallationProvider.getInstance().getLogDir().getCanonicalPath()
+                                      + File.separator + fileName.substring(0, fileName.lastIndexOf(".")) + "-" + fmt
                 .format(new Date()) + ".log");
         if (!jmeterLogFile.createNewFile()) {
             log.error("unable to create log file");
@@ -289,11 +226,7 @@ public class MBJMeterTestManager {
 
     }
 
-    public static void stopAllTests() throws IOException {
-        ShutdownClient.main(new String[]{"StopTestNow"});
-    }
-
     public String getReportFileName() {
-        return reportFileName;
+        return reportFileFullPath;
     }
 }

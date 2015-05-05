@@ -1,16 +1,17 @@
-import Utilities.MBJMeterTestManager;
-import Utilities.Utils;
+import exceptions.MBPerformanceException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.automation.tools.jmeter.JMeterTest;
+import org.xml.sax.SAXException;
+import utilities.MBJMeterTestManager;
+import utilities.Utils;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 
 /**
@@ -21,8 +22,10 @@ public class JMXSetup {
 
     protected XMLConfiguration publisher;
     protected XMLConfiguration subscriber;
-    protected String publisherPath = getClass().getResource("/jmx/JMSPublisher.jmx").getPath();
-    protected String subscriberPath = getClass().getResource("/jmx/JMSSubscriber.jmx").getPath();
+    protected MBJMeterTestManager publisherManager;
+    protected MBJMeterTestManager subscriberManager;
+    private String publisherPath = getClass().getResource("/jmx/JMSPublisher.jmx").getPath();
+    private String subscriberPath = getClass().getResource("/jmx/JMSSubscriber.jmx").getPath();
     private static final String PUBLISHER_PROPERTY_PREFIX = "publisher.";
     private static final String SUBSCRIBER_PROPERTY_PREFIX = "subscriber.";
 
@@ -36,88 +39,44 @@ public class JMXSetup {
         Utils.editPublisherJNDIPath(publisher, getClass().getResource("/jndi.properties").getPath());
         Utils.editSubscriberJNDIPath(subscriber, getClass().getResource("/jndi.properties").getPath());
 
-        InputStream input = new FileInputStream(getClass().getResource("/performance.properties").getPath());
-        Properties prop = new Properties();
-        prop.load(input);
+        Properties props = Utils.loadProperties(getClass().getResource("/performance.properties").getPath());
 
-        for (String propertyKey : prop.stringPropertyNames()) {
+        for (String propertyKey : props.stringPropertyNames()) {
             if (propertyKey.startsWith(PUBLISHER_PROPERTY_PREFIX)) {
-                Utils.editProperty(publisher, propertyKey.replace(PUBLISHER_PROPERTY_PREFIX, ""), prop.getProperty
+                Utils.editProperty(publisher, propertyKey.replace(PUBLISHER_PROPERTY_PREFIX, ""), props.getProperty
                         (propertyKey));
             }
             if (propertyKey.startsWith(SUBSCRIBER_PROPERTY_PREFIX)) {
-                Utils.editProperty(subscriber, propertyKey.replace(SUBSCRIBER_PROPERTY_PREFIX, ""), prop.getProperty
+                Utils.editProperty(subscriber, propertyKey.replace(SUBSCRIBER_PROPERTY_PREFIX, ""), props.getProperty
                         (propertyKey));
             }
         }
-        input.close();
     }
 
-    public void runTest() throws Exception {
-
-        //Utils.printXMLFile(publisher);
-
+    public void runTest() throws ConfigurationException, IOException, MBPerformanceException,
+            ParserConfigurationException, SAXException {
         publisher.save();
         subscriber.save();
 
-        final String subscriberPath = this.subscriberPath;
-        //        new Thread(new Runnable() {
-        //            @Override
-        //            public void run() {
-        //                try {
-        log.info("Subscriber started.");
-        MBJMeterTestManager subscriberManager = new MBJMeterTestManager();
-        JMeterTest subscriberScript = new JMeterTest(new File(subscriberPath));
+        log.info("Subscriber started...");
+        subscriberManager = new MBJMeterTestManager();
+        JMeterTest subscriberScript = new JMeterTest(new File(this.subscriberPath));
         subscriberManager.runTest(subscriberScript);
 
-        //                } catch (Exception e) {
-        //                    log.error("Error running test.", e);
-        //                }
-        //            }
-        //        }).start();
-
-
-        log.info("Publisher started.");
-        JMeterTest publisherScript = new JMeterTest(new File(publisherPath));
-        MBJMeterTestManager publisherManager = new MBJMeterTestManager();
+        log.info("Publisher started...");
+        publisherManager = new MBJMeterTestManager();
+        JMeterTest publisherScript = new JMeterTest(new File(this.publisherPath));
         publisherManager.runTest(publisherScript);
-        log.info("Publisher finished.");
 
-        Utils.waitAndStopIfNoChangeInFile(publisherManager);
-        Utils.waitAndStopIfNoChangeInFile(publisherManager);
+        Utils.waitUntilNoChangeInJTLFile(publisherManager);
+        Utils.waitUntilNoChangeInJTLFile(subscriberManager);
 
-//        while (!publisherManager.checkForEndOfTest()) {
-//            try {
-//                Thread.sleep(1000);
-//                log.info("Waiting for Publisher to Finish.");
-//            } catch (InterruptedException e) {
-//                break;
-//            }
-//        }
-//
-//
-//        // Check it file changes and quit
-//        while (!subscriberManager.checkForEndOfTest()) {
-//            try {
-//                Thread.sleep(1000);
-//                log.info("Waiting for Subscriber to Finish.");
-//            } catch (InterruptedException e) {
-//                break;
-//            }
-//        }
+        Utils.stopAllTests();
 
-        MBJMeterTestManager.stopAllTests();
-        log.info("Subscriber finished.");
+        publisherManager.xmlValidator();
+        subscriberManager.xmlValidator();
 
-        //        log.info("Waiting started.");
-        //        while (subscriberManager.isRunning) {
-        //            log.info(Boolean.toString(subscriberManager.isRunning));
-        //            Thread.sleep(5000);
-        //        }
-        //        log.info("Waiting ended.");
-    }
-
-    public void stopAllTests() throws IOException {
-        MBJMeterTestManager.stopAllTests();
+        log.info("Publisher message count : " + Utils.getMessageCount(publisherManager));
+        log.info("Subscriber message count : " + Utils.getMessageCount(subscriberManager));
     }
 }

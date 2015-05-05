@@ -10,9 +10,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 
 /**
- * Test class for 1KB messages.
+ * Test class for 5KB messages.
  */
-public class OneKBMessagesTestCase extends JMXSetup {
+public class FiveKBMessagesTestCase extends JMXSetup {
 
     /**
      * Initializer for the test case.
@@ -20,12 +20,12 @@ public class OneKBMessagesTestCase extends JMXSetup {
      * @throws ConfigurationException
      * @throws IOException
      */
-    public OneKBMessagesTestCase() throws ConfigurationException, IOException {
+    public FiveKBMessagesTestCase() throws ConfigurationException, IOException {
         super.init();
-        Utils.editPublisherInputFilePath(super.publisher, getClass().getResource("/sampleMessages/sample_1KB_msg" +
+        Utils.editPublisherInputFilePath(super.publisher, getClass().getResource("/sampleMessages/sample_5KB_msg" +
                                                                                  ".xml").getPath());
-        Utils.editPublisherDestinationName(super.publisher, "QueueOneKB");
-        Utils.editSubscriberDestinationName(super.subscriber, "QueueOneKB");
+        Utils.editPublisherDestinationName(super.publisher, "QueueFiveKB");
+        Utils.editSubscriberDestinationName(super.subscriber, "QueueFiveKB");
     }
 
     /**
@@ -37,7 +37,7 @@ public class OneKBMessagesTestCase extends JMXSetup {
      * @throws MBPerformanceException
      * @throws IOException
      */
-    @Test(groups = {"1kb"})
+    @Test(groups = {"5kb"})
     public void oneSubscriberTestCase() throws ConfigurationException, SAXException, ParserConfigurationException,
             MBPerformanceException, IOException {
 
@@ -57,7 +57,6 @@ public class OneKBMessagesTestCase extends JMXSetup {
                                                                                                          "messages " +
                                                                                                          "were not " +
                                                                                                          "received.");
-
     }
 
     /**
@@ -69,7 +68,7 @@ public class OneKBMessagesTestCase extends JMXSetup {
      * @throws MBPerformanceException
      * @throws IOException
      */
-    @Test(groups = {"1kb"})
+    @Test(groups = {"5kb"})
     public void twoSubscriberTestCase() throws ConfigurationException, SAXException, ParserConfigurationException,
             MBPerformanceException, IOException {
 
@@ -100,7 +99,7 @@ public class OneKBMessagesTestCase extends JMXSetup {
      * @throws MBPerformanceException
      * @throws IOException
      */
-    @Test(groups = {"1kb"})
+    @Test(groups = {"5kb"})
     public void fiveSubscriberTestCase() throws ConfigurationException, SAXException, ParserConfigurationException,
             MBPerformanceException, IOException {
 
@@ -131,7 +130,7 @@ public class OneKBMessagesTestCase extends JMXSetup {
      * @throws MBPerformanceException
      * @throws IOException
      */
-    @Test(groups = {"1kb"})
+    @Test(groups = {"5kb"})
     public void tenSubscriberTestCase() throws ConfigurationException, SAXException, ParserConfigurationException,
             MBPerformanceException, IOException {
 

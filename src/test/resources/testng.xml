@@ -5,6 +5,7 @@
     <test name="test1" preserve-order="true" >
         <classes>
             <class name="OneKBMessagesTestCase"/>
+            <!--<class name="FiveKBMessagesTestCase"/>-->
         </classes>
     </test>
 </suite>
