@@ -28,8 +28,10 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -181,13 +183,42 @@ public class MBJMeterTestManager {
                 DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new
                         FileReader(file)));
             } catch (SAXException e) {
-                log.warn("Error in JTL report file. Attempting to fix.");
-                PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(reportFileFullPath, true)));
-                out.println("</testResults>");
+                log.warn("Root end tag missing in JTL file. Attempting to fix.");
+                PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(file, true)));
+                out.print("</testResults>");
+                out.flush();
                 out.close();
 
-                DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new
-                        FileReader(file)));
+                try {
+                    DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new
+                            FileReader(file)));
+                } catch (SAXException e1) {
+                    if(e1.getMessage().equals("Content is not allowed in trailing section.")){
+                        log.warn("Trailing section in JTL file found. Attempting to fix.");
+
+                        BufferedReader br = new BufferedReader(new FileReader(file));
+                        StringBuilder sb = new StringBuilder();
+                        String line = br.readLine();
+
+                        while (line != null) {
+                            sb.append(line);
+                            sb.append(System.getProperty("line.separator"));
+                            line = br.readLine();
+                        }
+                        String everything = sb.toString();
+                        everything = everything.trim();
+                        br.close();
+
+                        PrintWriter writer = new PrintWriter(file);
+                        writer.print(everything);
+                        writer.close();
+
+                        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new
+                                FileReader(file)));
+                        log.info("Fixed error in JTL report file.");
+
+                    }
+                }
                 log.info("Fixed error in JTL report file.");
             }
         } else {

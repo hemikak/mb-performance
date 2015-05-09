@@ -135,7 +135,7 @@ public class Utils {
         // Returns a NodeList of all the Elements in document order with a given tag name and are contained in the
         // document.
         NodeList nodes = doc.getElementsByTagName("sample");
-        return nodes.getLength() / 2;
+        return nodes.getLength();
     }
 
     public static void stopAllTests() throws IOException {

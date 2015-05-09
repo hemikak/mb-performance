@@ -37,7 +37,7 @@ public class OneKBMessagesTestCase extends JMXSetup {
      * @throws MBPerformanceException
      * @throws IOException
      */
-    @Test(groups = {"1kb"})
+    @Test(groups = {"1kb"}, priority = 1, enabled = true)
     public void oneSubscriberTestCase() throws ConfigurationException, SAXException, ParserConfigurationException,
             MBPerformanceException, IOException {
 
@@ -50,14 +50,13 @@ public class OneKBMessagesTestCase extends JMXSetup {
 
         double publisherActualMessageCount = Double.parseDouble(super.publisher.getString(Constants
                 .MESSAGE_COUNT_PROPERTY));
-        Assert.assertEquals(publisherActualMessageCount, Utils
+        Assert.assertEquals(Utils
                 .getMessageCount
-                        (super.publisherManager), "All messages were not published.");
-        Assert.assertEquals(publisherActualMessageCount, Utils.getMessageCount(super.subscriberManager), "All " +
+                        (super.publisherManager), publisherActualMessageCount, "All messages were not published.");
+        Assert.assertEquals(Utils.getMessageCount(super.subscriberManager), publisherActualMessageCount, "All " +
                                                                                                          "messages " +
                                                                                                          "were not " +
                                                                                                          "received.");
-
     }
 
     /**
@@ -69,7 +68,7 @@ public class OneKBMessagesTestCase extends JMXSetup {
      * @throws MBPerformanceException
      * @throws IOException
      */
-    @Test(groups = {"1kb"})
+    @Test(groups = {"1kb"}, priority = 2, enabled = false)
     public void twoSubscriberTestCase() throws ConfigurationException, SAXException, ParserConfigurationException,
             MBPerformanceException, IOException {
 
@@ -82,10 +81,10 @@ public class OneKBMessagesTestCase extends JMXSetup {
 
         double publisherActualMessageCount = Double.parseDouble(super.publisher.getString(Constants
                 .MESSAGE_COUNT_PROPERTY)) * 2;
-        Assert.assertEquals(publisherActualMessageCount, Utils
+        Assert.assertEquals(Utils
                 .getMessageCount
-                        (super.publisherManager), "All messages were not published.");
-        Assert.assertEquals(publisherActualMessageCount, Utils.getMessageCount(super.subscriberManager), "All " +
+                        (super.publisherManager), publisherActualMessageCount, "All messages were not published.");
+        Assert.assertEquals(Utils.getMessageCount(super.subscriberManager), publisherActualMessageCount, "All " +
                                                                                                          "messages " +
                                                                                                          "were not " +
                                                                                                          "received.");
@@ -100,7 +99,7 @@ public class OneKBMessagesTestCase extends JMXSetup {
      * @throws MBPerformanceException
      * @throws IOException
      */
-    @Test(groups = {"1kb"})
+    @Test(groups = {"1kb"}, priority = 3, enabled = false)
     public void fiveSubscriberTestCase() throws ConfigurationException, SAXException, ParserConfigurationException,
             MBPerformanceException, IOException {
 
@@ -113,10 +112,10 @@ public class OneKBMessagesTestCase extends JMXSetup {
 
         double publisherActualMessageCount = Double.parseDouble(super.publisher.getString(Constants
                 .MESSAGE_COUNT_PROPERTY)) * 5;
-        Assert.assertEquals(publisherActualMessageCount, Utils
+        Assert.assertEquals(Utils
                 .getMessageCount
-                        (super.publisherManager), "All messages were not published.");
-        Assert.assertEquals(publisherActualMessageCount, Utils.getMessageCount(super.subscriberManager), "All " +
+                        (super.publisherManager), publisherActualMessageCount, "All messages were not published.");
+        Assert.assertEquals(Utils.getMessageCount(super.subscriberManager), publisherActualMessageCount, "All " +
                                                                                                          "messages " +
                                                                                                          "were not " +
                                                                                                          "received.");
@@ -131,7 +130,7 @@ public class OneKBMessagesTestCase extends JMXSetup {
      * @throws MBPerformanceException
      * @throws IOException
      */
-    @Test(groups = {"1kb"})
+    @Test(groups = {"1kb"}, priority = 4, enabled = false)
     public void tenSubscriberTestCase() throws ConfigurationException, SAXException, ParserConfigurationException,
             MBPerformanceException, IOException {
 
@@ -144,10 +143,10 @@ public class OneKBMessagesTestCase extends JMXSetup {
 
         double publisherActualMessageCount = Double.parseDouble(super.publisher.getString(Constants
                 .MESSAGE_COUNT_PROPERTY)) * 10;
-        Assert.assertEquals(publisherActualMessageCount, Utils
+        Assert.assertEquals(Utils
                 .getMessageCount
-                        (super.publisherManager), "All messages were not published.");
-        Assert.assertEquals(publisherActualMessageCount, Utils.getMessageCount(super.subscriberManager), "All " +
+                        (super.publisherManager), publisherActualMessageCount, "All messages were not published.");
+        Assert.assertEquals(Utils.getMessageCount(super.subscriberManager), publisherActualMessageCount, "All " +
                                                                                                          "messages " +
                                                                                                          "were not " +
                                                                                                          "received.");
