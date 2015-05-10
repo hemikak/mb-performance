@@ -2,8 +2,8 @@ import exceptions.MBPerformanceException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.automation.tools.jmeter.JMeterTest;
 import org.xml.sax.SAXException;
 import utilities.MBJMeterTestManager;
@@ -13,12 +13,13 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
  */
 public class JMXSetup {
-    private static final Logger log = LoggerFactory.getLogger(JMXSetup.class);
+    private static final Log log = LogFactory.getLog(JMXSetup.class);
 
     protected XMLConfiguration publisher;
     protected XMLConfiguration subscriber;
@@ -53,7 +54,7 @@ public class JMXSetup {
         }
     }
 
-    public void runTest() throws ConfigurationException, IOException, MBPerformanceException,
+    public void runTest(String prefix) throws ConfigurationException, IOException, MBPerformanceException,
             ParserConfigurationException, SAXException {
         publisher.save();
         subscriber.save();
@@ -61,20 +62,31 @@ public class JMXSetup {
         log.info("Subscriber started...");
         subscriberManager = new MBJMeterTestManager();
         JMeterTest subscriberScript = new JMeterTest(new File(this.subscriberPath));
-        subscriberManager.runTest(subscriberScript);
+        subscriberManager.runTest(subscriberScript, prefix);
 
         log.info("Publisher started...");
         publisherManager = new MBJMeterTestManager();
         JMeterTest publisherScript = new JMeterTest(new File(this.publisherPath));
-        publisherManager.runTest(publisherScript);
+        publisherManager.runTest(publisherScript, prefix);
 
         Utils.waitUntilNoChangeInJTLFile(publisherManager);
         Utils.waitUntilNoChangeInJTLFile(subscriberManager);
 
         Utils.stopAllTests();
 
-        publisherManager.xmlValidator();
-        subscriberManager.xmlValidator();
+        try {
+            log.info(("Waiting for JMeter process to end..."));
+            TimeUnit.SECONDS.sleep(30);
+        } catch (InterruptedException e) {
+            log.error(e);
+        }
+
+        if (Utils.loadProperties(getClass().getResource(File.separator + "jmeter.properties").getPath()).get("jmeter" +
+                                                                                                             ".save" +
+                                                                                                             ".saveservice.output_format").equals("xml")) {
+            publisherManager.xmlValidator();
+            subscriberManager.xmlValidator();
+        }
 
         log.info("Publisher message count : " + Utils.getMessageCount(publisherManager));
         log.info("Subscriber message count : " + Utils.getMessageCount(subscriberManager));

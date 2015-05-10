@@ -31,7 +31,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -64,7 +63,7 @@ public class MBJMeterTestManager {
 
     private String reportFileFullPath;
 
-    public void runTest(JMeterTest jMeterTest)
+    public void runTest(JMeterTest jMeterTest, String prefix)
             throws IOException, MBPerformanceException {
 
         // Init JMeter
@@ -78,37 +77,39 @@ public class MBJMeterTestManager {
             jmeterLogLevel = jMeterTest.getLogLevel();
         }
 
-        String resultFile = executeMe();
+        String resultFile = executeMe(prefix);
         log.info("for more info. " + resultFile);
     }
 
-    private String executeMe() throws MBPerformanceException, IOException {
-        addLogFile(testFile.getName());
-        return executeTest(testFile);
+    private String executeMe(String prefix) throws MBPerformanceException, IOException {
+        addLogFile(testFile.getName(), prefix);
+        return executeTest(testFile, prefix);
     }
 
     private void setJMeterPropertyFile(JMeterTest jMeterTest) throws IOException {
-        if (jMeterTest.getJMeterPropertyFile() == null) {
-            log.info("Loading default jmeter.properties...");
-            jmeterProps = JMeterInstallationProvider.getInstance().getJMeterPropertyFile();
-            System.setProperty("jmeter_properties",
-                    File.separator + "bin" + File.separator + "jmeter.properties");
-        } else {
-            log.info("Loading custom jmeter.properties from " + jMeterTest.getJMeterPropertyFile().getCanonicalPath());
-            jmeterProps = jMeterTest.getJMeterPropertyFile();
-            System.setProperty("jmeter_properties", jmeterProps.getCanonicalPath());
-
-        }
+        log.info("Loading default jmeter.properties : " + getClass().getResource("/jmeter.properties").getPath());
+        jmeterProps = new File(getClass().getResource(File.separator + "jmeter.properties").getPath());
+        System.setProperty("jmeter_properties",
+                getClass().getResource(File.separator + "jmeter.properties").getPath());
     }
 
-    private String executeTest(File test) throws MBPerformanceException {
+    private String executeTest(File test, String prefix) throws MBPerformanceException {
         String reportFileName;
         JMeter jmeterInstance = new JMeter();
         try {
             log.info("Executing test: " + test.getCanonicalPath());
-            reportFileName = test.getName().substring(0,
-                    test.getName().lastIndexOf(".")) + "-"
-                             + fmt.format(new Date()) + ".jmeterResult" + ".jtl";
+            if (Utils.loadProperties(getClass().getResource(File.separator + "jmeter.properties").getPath()).get("jmeter.save" +
+                                                                                                 ".saveservice" +
+                                                                                                 ".output_format")
+                    .equals("xml")) {
+                reportFileName = prefix + "-" + test.getName().substring(0,
+                        test.getName().lastIndexOf(".")) + "-"
+                                 + fmt.format(new Date()) + ".jmeterResult" + ".jtl";
+            } else {
+                reportFileName = prefix + "-" + test.getName().substring(0,
+                        test.getName().lastIndexOf(".")) + "-"
+                                 + fmt.format(new Date()) + ".jmeterResult" + ".csv";
+            }
 
             File reportDir = JMeterInstallationProvider.getInstance().getReportDir();
             reportFileFullPath = reportDir.toString() + File.separator + reportFileName;
@@ -193,7 +194,7 @@ public class MBJMeterTestManager {
                     DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new
                             FileReader(file)));
                 } catch (SAXException e1) {
-                    if(e1.getMessage().equals("Content is not allowed in trailing section.")){
+                    if (e1.getMessage().equals("Content is not allowed in trailing section.")) {
                         log.warn("Trailing section in JTL file found. Attempting to fix.");
 
                         BufferedReader br = new BufferedReader(new FileReader(file));
@@ -241,10 +242,10 @@ public class MBJMeterTestManager {
         }
     }
 
-    private void addLogFile(String fileName) throws IOException {
+    private void addLogFile(String fileName, String prefix) throws IOException {
 
         File jmeterLogFile = new File(JMeterInstallationProvider.getInstance().getLogDir().getCanonicalPath()
-                                      + File.separator + fileName.substring(0, fileName.lastIndexOf(".")) + "-" + fmt
+                                      + File.separator + prefix + "-" + fileName.substring(0, fileName.lastIndexOf(".")) + "-" + fmt
                 .format(new Date()) + ".log");
         if (!jmeterLogFile.createNewFile()) {
             log.error("unable to create log file");
@@ -257,7 +258,7 @@ public class MBJMeterTestManager {
 
     }
 
-    public String getReportFileName() {
+    public String getReportFileFullPath() {
         return reportFileFullPath;
     }
 }

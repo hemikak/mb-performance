@@ -2,9 +2,12 @@ package utilities;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.jmeter.util.ShutdownClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -13,6 +16,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -24,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * Utility class for MB performance testing.
  */
 public class Utils {
-    private static final Logger log = LoggerFactory.getLogger(Utils.class);
+    private static final Log log = LogFactory.getLog(Utils.class);
 
     /**
      * Prints the JMX configuration.
@@ -109,14 +113,14 @@ public class Utils {
         while (currentSize != oldSize) {
             try {
                 // Waits till the consumer client received more messages.
-                log.info("Waiting...");
-                TimeUnit.MILLISECONDS.sleep(15000);
+                log.info("Waiting for no changes in publisher/subscriber...");
+                TimeUnit.SECONDS.sleep(15);
             } catch (InterruptedException e) {
                 log.error("Error waiting for receiving messages.", e);
             }
             // Updating message counters
             oldSize = currentSize;
-            currentSize = new File(manager.getReportFileName()).length();//client.getReceivedMessageCount();
+            currentSize = new File(manager.getReportFileFullPath()).length();//client.getReceivedMessageCount();
         }
 
         log.info("Waiting finished.");
@@ -124,18 +128,28 @@ public class Utils {
 
     public static double getMessageCount(MBJMeterTestManager manager) throws ParserConfigurationException,
             IOException, SAXException {
-        // Defines a factory API that enables applications to obtain a parser that produces DOM object trees from XML
-        // documents.
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        if (Utils.loadProperties(manager.getClass().getResource("/jmeter.properties").getPath()).get("jmeter.save.saveservice.output_format").equals("xml")) {
+            // Defines a factory API that enables applications to obtain a parser that produces DOM object trees from XML
+            // documents.
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 
-        // The Document interface represents the entire HTML or XML document. Conceptually, it is the root of the
-        // document tree, and provides the primary access to the document's data.
-        Document doc = factory.newDocumentBuilder().parse(manager.getReportFileName());
+            // The Document interface represents the entire HTML or XML document. Conceptually, it is the root of the
+            // document tree, and provides the primary access to the document's data.
+            Document doc = factory.newDocumentBuilder().parse(manager.getReportFileFullPath());
 
-        // Returns a NodeList of all the Elements in document order with a given tag name and are contained in the
-        // document.
-        NodeList nodes = doc.getElementsByTagName("sample");
-        return nodes.getLength();
+            // Returns a NodeList of all the Elements in document order with a given tag name and are contained in the
+            // document.
+            NodeList nodes = doc.getElementsByTagName("sample");
+            return nodes.getLength();
+        }else{
+            CSVParser parser = new CSVParser(new FileReader(new File(manager.getReportFileFullPath())), CSVFormat.EXCEL);
+            if (log.isDebugEnabled()) {
+                for (CSVRecord strings : parser.getRecords()) {
+                    log.info("CSV : " + strings.toString());
+                }
+            }
+            return (double)parser.getRecords().size() -1;
+        }
     }
 
     public static void stopAllTests() throws IOException {

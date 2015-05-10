@@ -6,6 +6,7 @@
         <classes>
             <class name="OneKBMessagesTestCase"/>
             <!--<class name="FiveKBMessagesTestCase"/>-->
+            <!--<class name="TenKBMessagesTestCase"/>-->
         </classes>
     </test>
 </suite>

@@ -1,43 +1,43 @@
 import exceptions.MBPerformanceException;
-import org.testng.Assert;
-import utilities.Constants;
-import utilities.Utils;
 import org.apache.commons.configuration.ConfigurationException;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
+import utilities.Constants;
+import utilities.Utils;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 
 /**
- * Test class for 5KB messages.
+ *
  */
-public class FiveKBMessagesTestCase extends JMXSetup {
+public class TenKBMessagesTestCase extends JMXSetup{
 
     /**
      * Initializer for the test case.
      *
-     * @throws ConfigurationException
-     * @throws IOException
+     * @throws org.apache.commons.configuration.ConfigurationException
+     * @throws java.io.IOException
      */
-    public FiveKBMessagesTestCase() throws ConfigurationException, IOException {
+    public TenKBMessagesTestCase() throws ConfigurationException, IOException {
         super.init();
-        Utils.editPublisherInputFilePath(super.publisher, getClass().getResource("/sampleMessages/sample_5KB_msg" +
+        Utils.editPublisherInputFilePath(super.publisher, getClass().getResource("/sampleMessages/sample_10KB_msg" +
                                                                                  ".xml").getPath());
-        Utils.editPublisherDestinationName(super.publisher, "QueueFiveKB");
-        Utils.editSubscriberDestinationName(super.subscriber, "QueueFiveKB");
+        Utils.editPublisherDestinationName(super.publisher, "QueueTenKB");
+        Utils.editSubscriberDestinationName(super.subscriber, "QueueTenKB");
     }
 
     /**
      * Runs test case with 1 subscriber and publisher with 1 second ramp up time.
      *
      * @throws ConfigurationException
-     * @throws SAXException
-     * @throws ParserConfigurationException
-     * @throws MBPerformanceException
+     * @throws org.xml.sax.SAXException
+     * @throws javax.xml.parsers.ParserConfigurationException
+     * @throws exceptions.MBPerformanceException
      * @throws IOException
      */
-    @Test(groups = {"5kb"}, priority = 1)
+    @Test(groups = {"10kb"}, priority = 1)
     public void oneSubscriberTestCase() throws ConfigurationException, SAXException, ParserConfigurationException,
             MBPerformanceException, IOException {
 
@@ -46,7 +46,7 @@ public class FiveKBMessagesTestCase extends JMXSetup {
         Utils.editRampUpTime(super.publisher, "1");
         Utils.editRampUpTime(super.subscriber, "1");
 
-        super.runTest("5KB-1Threads");
+        super.runTest("10KB-1Threads");
 
         double publisherActualMessageCount = Double.parseDouble(super.publisher.getString(Constants
                 .MESSAGE_COUNT_PROPERTY));
@@ -68,7 +68,7 @@ public class FiveKBMessagesTestCase extends JMXSetup {
      * @throws MBPerformanceException
      * @throws IOException
      */
-    @Test(groups = {"5kb"}, priority = 2)
+    @Test(groups = {"10kb"}, priority = 2)
     public void twoSubscriberTestCase() throws ConfigurationException, SAXException, ParserConfigurationException,
             MBPerformanceException, IOException {
 
@@ -77,7 +77,7 @@ public class FiveKBMessagesTestCase extends JMXSetup {
         Utils.editRampUpTime(super.publisher, "1");
         Utils.editRampUpTime(super.subscriber, "1");
 
-        super.runTest("5KB-2Threads");
+        super.runTest("10KB-2Threads");
 
         double publisherActualMessageCount = Double.parseDouble(super.publisher.getString(Constants
                 .MESSAGE_COUNT_PROPERTY)) * 2;
@@ -99,7 +99,7 @@ public class FiveKBMessagesTestCase extends JMXSetup {
      * @throws MBPerformanceException
      * @throws IOException
      */
-    @Test(groups = {"5kb"}, priority = 3)
+    @Test(groups = {"10kb"}, priority = 3)
     public void fiveSubscriberTestCase() throws ConfigurationException, SAXException, ParserConfigurationException,
             MBPerformanceException, IOException {
 
@@ -108,7 +108,7 @@ public class FiveKBMessagesTestCase extends JMXSetup {
         Utils.editRampUpTime(super.publisher, "5");
         Utils.editRampUpTime(super.subscriber, "5");
 
-        super.runTest("5KB-5Threads");
+        super.runTest("10KB-5Threads");
 
         double publisherActualMessageCount = Double.parseDouble(super.publisher.getString(Constants
                 .MESSAGE_COUNT_PROPERTY)) * 5;
@@ -130,7 +130,7 @@ public class FiveKBMessagesTestCase extends JMXSetup {
      * @throws MBPerformanceException
      * @throws IOException
      */
-    @Test(groups = {"5kb"}, priority = 4)
+    @Test(groups = {"10kb"}, priority = 4)
     public void tenSubscriberTestCase() throws ConfigurationException, SAXException, ParserConfigurationException,
             MBPerformanceException, IOException {
 
@@ -139,7 +139,7 @@ public class FiveKBMessagesTestCase extends JMXSetup {
         Utils.editRampUpTime(super.publisher, "5");
         Utils.editRampUpTime(super.subscriber, "5");
 
-        super.runTest("5KB-10Threads");
+        super.runTest("10KB-10Threads");
 
         double publisherActualMessageCount = Double.parseDouble(super.publisher.getString(Constants
                 .MESSAGE_COUNT_PROPERTY)) * 10;
